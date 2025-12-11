@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ active_list.name if active_list else 'My Tasks' }} - Todo App{% endblock %}
+{% block title %}{% if active_list and incomplete_count is defined and incomplete_count > 0 %}({{ incomplete_count }}) {% endif %}{{ active_list.name if active_list else 'My Tasks' }} - Todo App{% endblock %}
 
 {% block body %}
-<div class="app-layout">
+<div class="app-layout" data-list-name="{{ active_list.name if active_list else 'My Tasks' }}">
+    <!-- Hidden element for OOB title updates -->
+    <span id="page-title-count" style="display: none;" data-count="{{ incomplete_count if incomplete_count is defined else 0 }}"></span>
+    
     <!-- Header -->
     <header class="app-header">
         <div class="header-left">

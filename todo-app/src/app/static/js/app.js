@@ -1,5 +1,20 @@
 // Todo App JavaScript
 
+// Update page title with todo count
+function updatePageTitle() {
+    const titleElement = document.getElementById('page-title-count');
+    if (!titleElement) return;
+    
+    const count = parseInt(titleElement.dataset.count || '0');
+    const listName = document.querySelector('.app-layout')?.dataset.listName || 'My Tasks';
+    
+    if (count > 0) {
+        document.title = `(${count}) ${listName} - Todo App`;
+    } else {
+        document.title = `${listName} - Todo App`;
+    }
+}
+
 // Theme toggle
 function toggleTheme() {
     const body = document.body;
@@ -29,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('sl-theme-dark');
         if (icon) icon.name = 'sun';
     }
+    
+    // Initialize page title
+    updatePageTitle();
 });
 
 // Initialize SortableJS for list reordering (sidebar)
@@ -88,6 +106,10 @@ document.body.addEventListener('htmx:afterSwap', (evt) => {
     }
     if (evt.detail.target.id === 'todos-list' || evt.detail.target.id === 'main-content') {
         initTodoSortable();
+    }
+    // Update page title when count element is swapped
+    if (evt.detail.target.id === 'page-title-count') {
+        updatePageTitle();
     }
 });
 
