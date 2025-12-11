@@ -234,7 +234,7 @@
     // Reinitialize after HTMX swaps (for navigation)
     document.body.addEventListener('htmx:afterSwap', (evt) => {
         if (evt.detail.target.id === 'main-content') {
-            // Re-initialize observer for the new list
+            // Defer to next tick to ensure HTMX has finished DOM updates
             setTimeout(initTitleObserver, 0);
         }
     });
