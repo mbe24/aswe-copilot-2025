@@ -117,6 +117,7 @@ async def create_todo(
         list_id=list_id,
         title=title.strip(),
         position=new_pos,
+        priority="low",
     )
     db.add(todo)
     db.commit()
@@ -223,7 +224,7 @@ async def update_todo(
     # Parse due date
     if due_date and due_date.strip():
         try:
-            todo.due_date = datetime.strptime(due_date, "%Y-%m-%dT%H:%M")
+            todo.due_date = datetime.strptime(due_date, "%Y-%m-%d")
         except ValueError:
             pass  # Keep existing
     else:
@@ -283,7 +284,7 @@ async def toggle_todo(
     )
 
 
-@router.delete("/{todo_id}")
+@router.delete("/{todo_id}", response_class=HTMLResponse)
 async def delete_todo(
     request: Request,
     todo_id: str,
@@ -300,10 +301,18 @@ async def delete_todo(
     if not list_obj:
         return Response(status_code=403)
 
+    list_id = todo.list_id
     db.delete(todo)
     db.commit()
 
-    return Response(status_code=200)
+    # Get updated count for OOB swap
+    count = _get_list_todo_count(db, list_id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/todo_deleted_oob.html",
+        context={"list_id": list_id, "count": count},
+    )
 
 
 @router.post("/{todo_id}/reorder")
