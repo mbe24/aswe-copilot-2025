@@ -188,6 +188,8 @@
     });
 
     // Update browser tab title when todo count changes
+    let titleObserver = null; // Store observer reference for cleanup
+
     function updatePageTitle() {
         const listContent = document.getElementById('list-content');
         if (!listContent) return;
@@ -203,8 +205,13 @@
         }
     }
 
-    // Watch for changes to the count element (via OOB swaps)
-    document.addEventListener('DOMContentLoaded', () => {
+    function initTitleObserver() {
+        // Disconnect previous observer if it exists
+        if (titleObserver) {
+            titleObserver.disconnect();
+            titleObserver = null;
+        }
+
         const listContent = document.getElementById('list-content');
         if (!listContent) return;
 
@@ -216,28 +223,19 @@
             updatePageTitle();
 
             // Watch for OOB swap updates to the count element
-            const observer = new MutationObserver(updatePageTitle);
-            observer.observe(countElement, { childList: true, characterData: true, subtree: true });
+            titleObserver = new MutationObserver(updatePageTitle);
+            titleObserver.observe(countElement, { childList: true, characterData: true, subtree: true });
         }
-    });
+    }
 
-    // Also update title after HTMX swaps (for navigation)
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initTitleObserver);
+
+    // Reinitialize after HTMX swaps (for navigation)
     document.body.addEventListener('htmx:afterSwap', (evt) => {
         if (evt.detail.target.id === 'main-content') {
             // Re-initialize observer for the new list
-            setTimeout(() => {
-                const listContent = document.getElementById('list-content');
-                if (!listContent) return;
-
-                const listId = listContent.dataset.listId;
-                const countElement = document.getElementById(`list-${listId}-count`);
-                
-                if (countElement) {
-                    updatePageTitle();
-                    const observer = new MutationObserver(updatePageTitle);
-                    observer.observe(countElement, { childList: true, characterData: true, subtree: true });
-                }
-            }, 0);
+            setTimeout(initTitleObserver, 0);
         }
     });
 </script>

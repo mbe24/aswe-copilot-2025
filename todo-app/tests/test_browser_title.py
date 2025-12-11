@@ -1,5 +1,7 @@
 """Tests for browser tab title feature."""
 
+import re
+
 import pytest
 
 from app.database import TodoList
@@ -93,7 +95,6 @@ class TestBrowserTitle:
             assert response.status_code == 200
             # Extract todo ID from response (it's in the HTML)
             html = response.text
-            import re
             match = re.search(r'id="todo-([^"]+)"', html)
             if match:
                 todo_ids.append(match.group(1))
