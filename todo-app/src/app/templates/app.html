@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ active_list.name if active_list else 'My Tasks' }} - Todo App{% endblock %}
+{% block title %}{% if active_list and incomplete_count > 0 %}({{ incomplete_count }}) {% endif %}{{ active_list.name if active_list else 'My Tasks' }} - Todo App{% endblock %}
 
 {% block body %}
 <div class="app-layout">
@@ -184,6 +184,60 @@
                     dialog.hide();
                 }
             });
+        }
+    });
+
+    // Update browser tab title when todo count changes
+    function updatePageTitle() {
+        const listContent = document.getElementById('list-content');
+        if (!listContent) return;
+
+        const listId = listContent.dataset.listId;
+        const listName = listContent.dataset.listName;
+        const countElement = document.getElementById(`list-${listId}-count`);
+        
+        if (countElement) {
+            const count = parseInt(countElement.textContent.trim(), 10);
+            const prefix = count > 0 ? `(${count}) ` : '';
+            document.title = `${prefix}${listName} - Todo App`;
+        }
+    }
+
+    // Watch for changes to the count element (via OOB swaps)
+    document.addEventListener('DOMContentLoaded', () => {
+        const listContent = document.getElementById('list-content');
+        if (!listContent) return;
+
+        const listId = listContent.dataset.listId;
+        const countElement = document.getElementById(`list-${listId}-count`);
+        
+        if (countElement) {
+            // Update title on initial load
+            updatePageTitle();
+
+            // Watch for OOB swap updates to the count element
+            const observer = new MutationObserver(updatePageTitle);
+            observer.observe(countElement, { childList: true, characterData: true, subtree: true });
+        }
+    });
+
+    // Also update title after HTMX swaps (for navigation)
+    document.body.addEventListener('htmx:afterSwap', (evt) => {
+        if (evt.detail.target.id === 'main-content') {
+            // Re-initialize observer for the new list
+            setTimeout(() => {
+                const listContent = document.getElementById('list-content');
+                if (!listContent) return;
+
+                const listId = listContent.dataset.listId;
+                const countElement = document.getElementById(`list-${listId}-count`);
+                
+                if (countElement) {
+                    updatePageTitle();
+                    const observer = new MutationObserver(updatePageTitle);
+                    observer.observe(countElement, { childList: true, characterData: true, subtree: true });
+                }
+            }, 0);
         }
     });
 </script>

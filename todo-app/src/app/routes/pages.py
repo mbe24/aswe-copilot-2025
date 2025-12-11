@@ -5,6 +5,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Cookie, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_optional_user_id, get_session
@@ -19,6 +20,13 @@ templates.env.globals["is_overdue"] = is_overdue
 templates.env.globals["is_due_today"] = is_due_today
 templates.env.globals["format_date"] = format_date
 templates.env.globals["format_date_input"] = format_date_input
+
+
+def _get_incomplete_todo_count(db: Session, list_id: str) -> int:
+    """Get the count of incomplete todos in a list."""
+    return db.query(func.count(Todo.id)).filter(
+        Todo.list_id == list_id, Todo.is_completed == False
+    ).scalar()
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -147,6 +155,9 @@ async def app_list_page(
         .all()
     )
 
+    # Get incomplete todo count for the title
+    incomplete_count = _get_incomplete_todo_count(db, list_id)
+
     return templates.TemplateResponse(
         request=request,
         name="app.html",
@@ -155,5 +166,6 @@ async def app_list_page(
             "lists": lists,
             "active_list": active_list,
             "todos": todos,
+            "incomplete_count": incomplete_count,
         },
     )
