@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ active_list.name if active_list else 'My Tasks' }} - Todo App{% endblock %}
+{% block title %}{% if active_list and incomplete_count > 0 %}({{ incomplete_count }}) {% endif %}{{ active_list.name if active_list else 'My Tasks' }} - Todo App{% endblock %}
 
 {% block body %}
 <div class="app-layout">
@@ -184,6 +184,58 @@
                     dialog.hide();
                 }
             });
+        }
+    });
+
+    // Update browser tab title when todo count changes
+    let titleObserver = null; // Store observer reference for cleanup
+
+    function updatePageTitle() {
+        const listContent = document.getElementById('list-content');
+        if (!listContent) return;
+
+        const listId = listContent.dataset.listId;
+        const listName = listContent.dataset.listName;
+        const countElement = document.getElementById(`list-${listId}-count`);
+        
+        if (countElement) {
+            const count = parseInt(countElement.textContent.trim(), 10);
+            const prefix = count > 0 ? `(${count}) ` : '';
+            document.title = `${prefix}${listName} - Todo App`;
+        }
+    }
+
+    function initTitleObserver() {
+        // Disconnect previous observer if it exists
+        if (titleObserver) {
+            titleObserver.disconnect();
+            titleObserver = null;
+        }
+
+        const listContent = document.getElementById('list-content');
+        if (!listContent) return;
+
+        const listId = listContent.dataset.listId;
+        const countElement = document.getElementById(`list-${listId}-count`);
+        
+        if (countElement) {
+            // Update title on initial load
+            updatePageTitle();
+
+            // Watch for OOB swap updates to the count element
+            titleObserver = new MutationObserver(updatePageTitle);
+            titleObserver.observe(countElement, { childList: true, characterData: true, subtree: true });
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initTitleObserver);
+
+    // Reinitialize after HTMX swaps (for navigation)
+    document.body.addEventListener('htmx:afterSwap', (evt) => {
+        if (evt.detail.target.id === 'main-content') {
+            // Defer to next tick to ensure HTMX has finished DOM updates
+            setTimeout(initTitleObserver, 0);
         }
     });
 </script>

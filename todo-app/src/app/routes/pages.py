@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_optional_user_id, get_session
 from app.database import Todo, TodoList, User, get_db
+from app.routes.todos import _get_list_todo_count
 from app.utils import format_date, format_date_input, is_due_today, is_overdue
 
 router = APIRouter(tags=["pages"])
@@ -147,6 +148,9 @@ async def app_list_page(
         .all()
     )
 
+    # Get incomplete todo count for the title
+    incomplete_count = _get_list_todo_count(db, list_id)
+
     return templates.TemplateResponse(
         request=request,
         name="app.html",
@@ -155,5 +159,6 @@ async def app_list_page(
             "lists": lists,
             "active_list": active_list,
             "todos": todos,
+            "incomplete_count": incomplete_count,
         },
     )
